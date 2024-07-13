@@ -8,10 +8,11 @@ They currently support:
 - Bank Panic
 - Bombjack
 - Bubble Bobble (Redux)
+- Bubble Bobble Lost Cave
 - Double Dragon
 
 Change history:  
-1.0 - Initial version  
+2024-07-12 - Initial version  
+2024-07-13 - Added Bubble Bobble Lost Cave  
 
 Marc Deslauriers  
-2024-07-12
