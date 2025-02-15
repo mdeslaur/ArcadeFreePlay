@@ -32,7 +32,7 @@ xdelta3.exe -d -s b08_13.3e b08_13.3e.patch b08_13.3e.patched
 
 What about saving high scores?
 ------------------------------
-Good news! Matt Obsorn has a patch that allows saving high scores if one
+Good news! Matt Osborn has a patch that allows saving high scores if one
 of the ram chips is replaced with non-volatile memory, more information
 can be found on his website here:
 
