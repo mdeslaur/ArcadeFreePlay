@@ -1,3 +1,10 @@
+---------------------------------------------------------------------------
+NOTE: These patches have not been extensively tested yet to make sure they
+don't trigger any sort of protection. If anyone tests these and can make it
+to the end level without issue, please let me know, or let me know which
+level didn't work. Until then, consider these possibly broken.
+---------------------------------------------------------------------------
+
 These patches add freeplay to the Arkanoid: Revenge of Doh roms.
 There are directories containing patches for the multiple country
 specific rom sets.
