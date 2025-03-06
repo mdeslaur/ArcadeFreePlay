@@ -12,6 +12,8 @@ adapters have been tested, you can apply the freeplay patches like so:
 xdelta3.exe -d -s old\7530-02.h3 7530-02.h3.patch new\7530-02.h3
 xdelta3.exe -d -s old\7531-02.e3 7531-02.e3.patch new\7531-02.e3
 
+Freeplay is enabled by setting DIP switches A, B, and C to ON.
+
 - mdeslaur
 
 Revision History:
