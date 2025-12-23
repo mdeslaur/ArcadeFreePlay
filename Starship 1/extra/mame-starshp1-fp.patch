@@ -1,0 +1,17 @@
+This is a quick patch for MAME to add a Free Play dip swith to Starship 1
+to aid with testing.
+
+This was tested with MAME 264.
+
+Marc Deslauriers, 2025-12-23
+
+--- a/src/mame/atari/starshp1.cpp
++++ b/src/mame/atari/starshp1.cpp
+@@ -729,6 +729,7 @@ static INPUT_PORTS_START( starshp1 )
+ 	PORT_START("COINAGE")
+ 	PORT_BIT( 0x0f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(starshp1_state, collision_latch_r)   // collision latch
+ 	PORT_DIPNAME( 0x70, 0x20, DEF_STR( Coinage ) )
++	PORT_DIPSETTING(    0x00, DEF_STR( Free_Play ) )
+ 	PORT_DIPSETTING(    0x10, DEF_STR( 2C_1C ) )
+ 	PORT_DIPSETTING(    0x20, DEF_STR( 1C_1C ) )
+ 	PORT_DIPSETTING(    0x40, DEF_STR( 1C_2C ) )
