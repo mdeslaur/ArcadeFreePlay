@@ -18,5 +18,6 @@ Change history:
 2024-07-13 - Added Bubble Bobble Lost Cave  
 2024-07-13 - Added Atari Starship 1  
 2025-02-15 - Added Arkanoid: Revenge of Doh  
+2025-12-23 - Added High Score saving to Bombjack patches  
 
 Marc Deslauriers  

@@ -9,8 +9,28 @@ xdelta3.exe -d -s old\11_m01b.bin 11_m01b.bin.patch new\11_m01b.bin
 xdelta3.exe -d -s old\12_n01b.bin 12_n01b.bin.patch new\12_n01b.bin
 xdelta3.exe -d -s old\13.1r 13.1r.patch new\13.1r
 
+What about saving high scores?
+------------------------------
+Good news! Jrok has a patch that allows saving high scores if one of the
+ram chips is replaced with non-volatile memory, more information can be
+found on his website here:
+
+https://www.jrok.com/sohs/bjack_shs.html
+
+As a convenience, there is a patch file called 09_j01b.bin.fpshs.patch
+which includes both my freeplay mod and Jrok's save high score mod, and can
+be used instead of the patch file for one of the roms listed above.
+
+xdelta3.exe -d -s old\09_j01b.bin 09_j01b.bin.fpshs.patch new\09_j01b.bin
+(do the other 3 roms as above)
+
+It is not recommended to use the high score save patch if the ram has not
+been replaced, as the game will always start with the high score table set
+to 0.
+
 - mdeslaur
 
 Revision History:
 2021-06-30 - Initial version
+2025-12-23 - Added high score saving rom patch
 
