@@ -1,0 +1,192 @@
+This is a quick patch for MAME to add an NVRAM and the Bombjack freeplay
+images to help with testing.
+
+This was tested with MAME 264.
+
+Marc Deslauriers, 2025-12-23
+
+--- a/src/mame/tecmo/bombjack.cpp
++++ b/src/mame/tecmo/bombjack.cpp
+@@ -103,6 +103,7 @@ Dip Locations and factory settings verif
+ #include "sound/ay8910.h"
+ 
+ #include "emupal.h"
++#include "machine/nvram.h"
+ #include "screen.h"
+ #include "speaker.h"
+ #include "tilemap.h"
+@@ -126,11 +127,13 @@ public:
+ 	{ }
+ 
+ 	void bombjack(machine_config &config);
++	void bombjackshs(machine_config &config);
+ 
+ protected:
+ 	virtual void machine_start() override;
+ 	virtual void machine_reset() override;
+ 	virtual void video_start() override;
++	void bombjackshs_map(address_map &map);
+ 
+ private:
+ 	uint8_t soundlatch_read_and_clear();
+@@ -340,6 +343,29 @@ void bombjack_state::main_map(address_ma
+ 	map(0xc000, 0xdfff).rom();
+ }
+ 
++void bombjack_state::bombjackshs_map(address_map &map)
++{
++	map(0x0000, 0x7fff).rom();
++    map(0x8000, 0x87ff).ram().share("nvram");
++	map(0x8800, 0x8fff).ram();
++	map(0x9000, 0x93ff).ram().w(FUNC(bombjack_state::videoram_w)).share(m_videoram);
++	map(0x9400, 0x97ff).ram().w(FUNC(bombjack_state::colorram_w)).share(m_colorram);
++	map(0x9820, 0x987f).writeonly().share(m_spriteram);
++	map(0x9a00, 0x9a00).nopw();
++	map(0x9c00, 0x9cff).w(m_palette, FUNC(palette_device::write8)).share("palette");
++	map(0x9e00, 0x9e00).w(FUNC(bombjack_state::background_w));
++	map(0xb000, 0xb000).portr("P1");
++	map(0xb000, 0xb000).w(FUNC(bombjack_state::irq_mask_w));
++	map(0xb001, 0xb001).portr("P2");
++	map(0xb002, 0xb002).portr("SYSTEM");
++	map(0xb003, 0xb003).nopr(); // watchdog reset?
++	map(0xb004, 0xb004).portr("DSW1");
++	map(0xb004, 0xb004).w(FUNC(bombjack_state::flipscreen_w));
++	map(0xb005, 0xb005).portr("DSW2");
++	map(0xb800, 0xb800).w(m_soundlatch, FUNC(generic_latch_8_device::write));
++	map(0xc000, 0xdfff).rom();
++}
++
+ void bombjack_state::audio_map(address_map &map)
+ {
+ 	map(0x0000, 0x1fff).rom();
+@@ -572,6 +598,14 @@ void bombjack_state::bombjack(machine_co
+ }
+ 
+ 
++void bombjack_state::bombjackshs(machine_config &config)
++{
++    bombjack(config);
++
++	m_maincpu->set_addrmap(AS_PROGRAM, &bombjack_state::bombjackshs_map);
++	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
++}
++
+ 
+ /*************************************
+  *
+@@ -609,6 +643,96 @@ ROM_START( bombjack )
+ 	ROM_LOAD( "02_p04t.bin",  0x0000, 0x1000, CRC(398d4a02) SHA1(ac18a8219f99ba9178b96c9564de3978e39c59fd) )
+ ROM_END
+ 
++ROM_START( bombjackfp )
++	ROM_REGION( 0x10000, "maincpu", 0 )
++	ROM_LOAD( "09_j01b.bin",  0x0000, 0x2000, CRC(94620554) SHA1(b718e566981f780dedc8bd31038153f7a959a568) )
++	ROM_LOAD( "10_l01b.bin",  0x2000, 0x2000, CRC(52a1e5fb) SHA1(e1cdc4b4efbc6c7a1e4fa65019486617f2acba1b) )
++	ROM_LOAD( "11_m01b.bin",  0x4000, 0x2000, CRC(9e29ad6c) SHA1(f840505a127657bd2fbd46c284bccb1bac7dca2b) )
++	ROM_LOAD( "12_n01b.bin",  0x6000, 0x2000, CRC(881800ec) SHA1(92538a4a8b825143cc710b5e66e596e0b721b330) )
++	ROM_LOAD( "13.1r",        0xc000, 0x2000, CRC(5acf0dae) SHA1(8116886b44911cfed758f22b6d011e4cf3366908) )
++
++	ROM_REGION( 0x10000, "audiocpu", 0 )
++	ROM_LOAD( "01_h03t.bin",  0x0000, 0x2000, CRC(8407917d) SHA1(318face9f7a7ab6c7eeac773995040425e780aaf) )
++
++	ROM_REGION( 0x3000, "chars", 0 )
++	ROM_LOAD( "03_e08t.bin",  0x0000, 0x1000, CRC(9f0470d5) SHA1(94ef52ef47b4399a03528fe3efeac9c1d6983446) )
++	ROM_LOAD( "04_h08t.bin",  0x1000, 0x1000, CRC(81ec12e6) SHA1(e29ba193f21aa898499187603b25d2e226a07c7b) )
++	ROM_LOAD( "05_k08t.bin",  0x2000, 0x1000, CRC(e87ec8b1) SHA1(a66808ef2d62fca2854396898b86bac9be5f17a3) )
++
++	ROM_REGION( 0x6000, "bgtiles1", 0 )
++	ROM_LOAD( "06_l08t.bin",  0x0000, 0x2000, CRC(51eebd89) SHA1(515128a3971fcb97b60c5b6bdd2b03026aec1921) )
++	ROM_LOAD( "07_n08t.bin",  0x2000, 0x2000, CRC(9dd98e9d) SHA1(6db6006a6e20ff7c243d88293ca53681c4703ea5) )
++	ROM_LOAD( "08_r08t.bin",  0x4000, 0x2000, CRC(3155ee7d) SHA1(e7897dca4c145f10b7d975b8ef0e4d8aa9354c25) )
++
++	ROM_REGION( 0x6000, "sprites", 0 )
++	ROM_LOAD( "16_m07b.bin",  0x0000, 0x2000, CRC(94694097) SHA1(de71bcd67f97d05527f2504fc8430be333fb9ec2) )
++	ROM_LOAD( "15_l07b.bin",  0x2000, 0x2000, CRC(013f58f2) SHA1(20c64593ab9fcb04cefbce0cd5d17ce3ff26441b) )
++	ROM_LOAD( "14_j07b.bin",  0x4000, 0x2000, CRC(101c858d) SHA1(ed1746c15cdb04fae888601d940183d5c7702282) )
++
++	ROM_REGION( 0x1000, "bg_tilemaps", 0 )
++	ROM_LOAD( "02_p04t.bin",  0x0000, 0x1000, CRC(398d4a02) SHA1(ac18a8219f99ba9178b96c9564de3978e39c59fd) )
++ROM_END
++
++ROM_START( bombjackshs )
++	ROM_REGION( 0x10000, "maincpu", 0 )
++	ROM_LOAD( "BJ_J1.BIN",    0x0000, 0x2000, CRC(2e8f5ad0) SHA1(e56baf71403544c959fe45be8381c77730bb8082) )
++	ROM_LOAD( "10_l01b.bin",  0x2000, 0x2000, CRC(52a1e5fb) SHA1(e1cdc4b4efbc6c7a1e4fa65019486617f2acba1b) )
++	ROM_LOAD( "11_m01b.bin",  0x4000, 0x2000, CRC(b68a062a) SHA1(43bae56494ac0202aaa8f1ed5c1ed1bff775b2b8) )
++	ROM_LOAD( "12_n01b.bin",  0x6000, 0x2000, CRC(1d3ecee5) SHA1(8b3c49e21ea4952cae7042890d1be2115f7d6fda) )
++	ROM_LOAD( "13.1r",        0xc000, 0x2000, CRC(70e0244d) SHA1(67654155e42821ea78a655f869fb81c8d6387f63) )
++
++	ROM_REGION( 0x10000, "audiocpu", 0 )
++	ROM_LOAD( "01_h03t.bin",  0x0000, 0x2000, CRC(8407917d) SHA1(318face9f7a7ab6c7eeac773995040425e780aaf) )
++
++	ROM_REGION( 0x3000, "chars", 0 )
++	ROM_LOAD( "03_e08t.bin",  0x0000, 0x1000, CRC(9f0470d5) SHA1(94ef52ef47b4399a03528fe3efeac9c1d6983446) )
++	ROM_LOAD( "04_h08t.bin",  0x1000, 0x1000, CRC(81ec12e6) SHA1(e29ba193f21aa898499187603b25d2e226a07c7b) )
++	ROM_LOAD( "05_k08t.bin",  0x2000, 0x1000, CRC(e87ec8b1) SHA1(a66808ef2d62fca2854396898b86bac9be5f17a3) )
++
++	ROM_REGION( 0x6000, "bgtiles1", 0 )
++	ROM_LOAD( "06_l08t.bin",  0x0000, 0x2000, CRC(51eebd89) SHA1(515128a3971fcb97b60c5b6bdd2b03026aec1921) )
++	ROM_LOAD( "07_n08t.bin",  0x2000, 0x2000, CRC(9dd98e9d) SHA1(6db6006a6e20ff7c243d88293ca53681c4703ea5) )
++	ROM_LOAD( "08_r08t.bin",  0x4000, 0x2000, CRC(3155ee7d) SHA1(e7897dca4c145f10b7d975b8ef0e4d8aa9354c25) )
++
++	ROM_REGION( 0x6000, "sprites", 0 )
++	ROM_LOAD( "16_m07b.bin",  0x0000, 0x2000, CRC(94694097) SHA1(de71bcd67f97d05527f2504fc8430be333fb9ec2) )
++	ROM_LOAD( "15_l07b.bin",  0x2000, 0x2000, CRC(013f58f2) SHA1(20c64593ab9fcb04cefbce0cd5d17ce3ff26441b) )
++	ROM_LOAD( "14_j07b.bin",  0x4000, 0x2000, CRC(101c858d) SHA1(ed1746c15cdb04fae888601d940183d5c7702282) )
++
++	ROM_REGION( 0x1000, "bg_tilemaps", 0 )
++	ROM_LOAD( "02_p04t.bin",  0x0000, 0x1000, CRC(398d4a02) SHA1(ac18a8219f99ba9178b96c9564de3978e39c59fd) )
++ROM_END
++
++ROM_START( bombjackfpshs )
++	ROM_REGION( 0x10000, "maincpu", 0 )
++	ROM_LOAD( "09_j01b.bin",  0x0000, 0x2000, CRC(7c8583b4) SHA1(1ada8d7a7549d3ff9e453f7341e5008c067fc669) )
++	ROM_LOAD( "10_l01b.bin",  0x2000, 0x2000, CRC(52a1e5fb) SHA1(e1cdc4b4efbc6c7a1e4fa65019486617f2acba1b) )
++	ROM_LOAD( "11_m01b.bin",  0x4000, 0x2000, CRC(9e29ad6c) SHA1(f840505a127657bd2fbd46c284bccb1bac7dca2b) )
++	ROM_LOAD( "12_n01b.bin",  0x6000, 0x2000, CRC(881800ec) SHA1(92538a4a8b825143cc710b5e66e596e0b721b330) )
++	ROM_LOAD( "13.1r",        0xc000, 0x2000, CRC(5acf0dae) SHA1(8116886b44911cfed758f22b6d011e4cf3366908) )
++
++	ROM_REGION( 0x10000, "audiocpu", 0 )
++	ROM_LOAD( "01_h03t.bin",  0x0000, 0x2000, CRC(8407917d) SHA1(318face9f7a7ab6c7eeac773995040425e780aaf) )
++
++	ROM_REGION( 0x3000, "chars", 0 )
++	ROM_LOAD( "03_e08t.bin",  0x0000, 0x1000, CRC(9f0470d5) SHA1(94ef52ef47b4399a03528fe3efeac9c1d6983446) )
++	ROM_LOAD( "04_h08t.bin",  0x1000, 0x1000, CRC(81ec12e6) SHA1(e29ba193f21aa898499187603b25d2e226a07c7b) )
++	ROM_LOAD( "05_k08t.bin",  0x2000, 0x1000, CRC(e87ec8b1) SHA1(a66808ef2d62fca2854396898b86bac9be5f17a3) )
++
++	ROM_REGION( 0x6000, "bgtiles1", 0 )
++	ROM_LOAD( "06_l08t.bin",  0x0000, 0x2000, CRC(51eebd89) SHA1(515128a3971fcb97b60c5b6bdd2b03026aec1921) )
++	ROM_LOAD( "07_n08t.bin",  0x2000, 0x2000, CRC(9dd98e9d) SHA1(6db6006a6e20ff7c243d88293ca53681c4703ea5) )
++	ROM_LOAD( "08_r08t.bin",  0x4000, 0x2000, CRC(3155ee7d) SHA1(e7897dca4c145f10b7d975b8ef0e4d8aa9354c25) )
++
++	ROM_REGION( 0x6000, "sprites", 0 )
++	ROM_LOAD( "16_m07b.bin",  0x0000, 0x2000, CRC(94694097) SHA1(de71bcd67f97d05527f2504fc8430be333fb9ec2) )
++	ROM_LOAD( "15_l07b.bin",  0x2000, 0x2000, CRC(013f58f2) SHA1(20c64593ab9fcb04cefbce0cd5d17ce3ff26441b) )
++	ROM_LOAD( "14_j07b.bin",  0x4000, 0x2000, CRC(101c858d) SHA1(ed1746c15cdb04fae888601d940183d5c7702282) )
++
++	ROM_REGION( 0x1000, "bg_tilemaps", 0 )
++	ROM_LOAD( "02_p04t.bin",  0x0000, 0x1000, CRC(398d4a02) SHA1(ac18a8219f99ba9178b96c9564de3978e39c59fd) )
++ROM_END
++
+ ROM_START( bombjack2 )
+ 	ROM_REGION( 0x10000, "maincpu", 0 )
+ 	ROM_LOAD( "09_j01b.bin",  0x0000, 0x2000, CRC(c668dc30) SHA1(51dd6a2688b42e9f28f0882bd76f75be7ec3222a) )
+@@ -719,3 +843,6 @@ GAME( 1984, bombjack,   0,        bombja
+ GAME( 1984, bombjack2,  bombjack, bombjack, bombjack, bombjack_state, empty_init, ROT90, "Tehkan",                  "Bomb Jack (set 2)",         MACHINE_SUPPORTS_SAVE )
+ GAME( 1984, bombjackt,  bombjack, bombjack, bombjack, bombjack_state, empty_init, ROT90, "Tehkan (Tecfri licence)", "Bomb Jack (Tecfri, Spain)", MACHINE_SUPPORTS_SAVE ) // official licence
+ GAME( 1985, bombjackbl, bombjack, bombjack, bombjack, bombjack_state, empty_init, ROT90, "bootleg",                 "Bomb Jack (bootleg)",       MACHINE_SUPPORTS_SAVE )
++GAME( 1984, bombjackfp,    bombjack, bombjackshs, bombjack, bombjack_state, empty_init, ROT90, "hack (mdeslaur)",  "Bomb Jack (Freeplay)",            MACHINE_SUPPORTS_SAVE )
++GAME( 1984, bombjackshs,   bombjack, bombjackshs, bombjack, bombjack_state, empty_init, ROT90, "hack (JROK)",      "Bomb Jack (SaveHS)",           MACHINE_SUPPORTS_SAVE )
++GAME( 1984, bombjackfpshs, bombjack, bombjackshs, bombjack, bombjack_state, empty_init, ROT90, "hack (mdeslaur)",  "Bomb Jack (Freeplay+SaveHS)",  MACHINE_SUPPORTS_SAVE )
+--- a/src/mame/mame.lst
++++ b/src/mame/mame.lst
+@@ -44103,6 +44103,9 @@ bombjack                        // (c) 1
+ bombjack2                       // (c) 1984 Tehkan
+ bombjackbl                      // bootleg
+ bombjackt                       // (c) 1984 Tehkan + Tecfri license
++bombjackfp                      // hack
++bombjackshs                     // hack
++bombjackfpshs                   // hack
+ 
+ @source:tecmo/gaiden.cpp
+ drgnbowl                        // (c) 1992 Nics
