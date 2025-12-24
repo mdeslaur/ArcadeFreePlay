@@ -1,3 +1,8 @@
+Note: Arcade Rom Patcher v15 now has a better Free Play and High Score Save
+patch, use that instead of this one.
+
+---------------------------------------------------------------------------
+
 These patches add freeplay to the Bomb Jack roms.
 These apply to the "Bomb Jack (set 1)" set found in mame.
 
@@ -33,4 +38,5 @@ to 0.
 Revision History:
 2021-06-30 - Initial version
 2025-12-23 - Added high score saving rom patch
+2025-12-24 - Added note about Arcade Rom Patcher
 
