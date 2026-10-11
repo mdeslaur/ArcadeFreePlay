@@ -14,8 +14,11 @@ xdelta3.exe -d -s old\7531-02.e3 7531-02.e3.patch new\7531-02.e3
 
 Freeplay is enabled by setting DIP switches A, B, and C to ON.
 
-- mdeslaur
+Update: RTypeEman from KLOV has provided a kicad file for a PCB to switch
+the masked roms to eproms. See the contents of the rom-adapter directory.
 
-Revision History:
-2023-06-14 - Initial version.
+Revision History:  
+2023-06-14 - Initial version.  
+2026-10-11 - Added rom adapter.  
 
+Marc Deslauriers
