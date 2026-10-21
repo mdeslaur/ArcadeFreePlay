@@ -1,0 +1,191 @@
+Description: add Mario Bros. High Score Kit (hack,V1.3)
+Author: Marc Deslauriers <marcdeslauriers@videotron.ca>
+
+--- a/src/mame/mame.lst
++++ b/src/mame/mame.lst
+@@ -34223,6 +34223,7 @@ marioe                          // (c) 1
+ mariof                          // (c) 1983 Nintendo of America
+ marioj                          // (c) 1983 Nintendo
+ masao                           // bootleg
++mariohs                         // hack
+ 
+ @source:nintendo/mmagic.cpp
+ mmagic                          // (c) 1979 Nintendo
+--- a/src/mame/nintendo/mario.cpp
++++ b/src/mame/nintendo/mario.cpp
+@@ -385,6 +385,58 @@ void mario_state::masao(machine_config &
+ 	masao_audio(config);
+ }
+ 
++void mario_state::mario_braze(machine_config &config)
++{
++	mario(config);
++
++	EEPROM_93C46_8BIT(config, "eeprom");
++}
++
++uint8_t mario_state::braze_eeprom_r()
++{
++	return m_eeprom->do_read();
++}
++
++void mario_state::braze_eeprom_w(uint8_t data)
++{
++	m_eeprom->di_write(data & 0x01);
++	m_eeprom->cs_write(data & 0x04 ? ASSERT_LINE : CLEAR_LINE);
++	m_eeprom->clk_write(data & 0x02 ? ASSERT_LINE : CLEAR_LINE);
++}
++
++void mario_state::braze_decrypt_rom(uint8_t *dest)
++{
++	uint8_t oldbyte,newbyte;
++	uint8_t *ROM;
++	uint32_t mem;
++	uint32_t newmem;
++
++	ROM = memregion("braze")->base();
++
++	for (mem=0;mem<0x10000;mem++)
++	{
++		oldbyte = ROM[mem];
++
++		newmem = ((bitswap<8>((mem >> 8),7,2,3,1,0,6,4,5))<<8) | (mem & 0xff);
++		newbyte = bitswap<8>(oldbyte, 1,4,5,7,6,0,3,2);
++
++		dest[newmem] = newbyte;
++	}
++}
++
++void mario_state::init_mariohs()
++{
++	m_decrypted = std::make_unique<uint8_t[]>(0x10000);
++
++	braze_decrypt_rom(m_decrypted.get());
++
++	m_maincpu->space(AS_PROGRAM).install_rom(0x0000, 0x5fff, m_decrypted.get());
++	m_maincpu->space(AS_PROGRAM).install_rom(0x8000, 0xffff, m_decrypted.get() + 0x8000);
++
++	address_space &space = m_maincpu->space(AS_PROGRAM);
++	space.install_read_handler(0xc000, 0xc000, read8smo_delegate(*this, FUNC(mario_state::braze_eeprom_r)));
++	space.install_write_handler(0xc000, 0xc000, write8smo_delegate(*this, FUNC(mario_state::braze_eeprom_w)));
++}
+ 
+ /*************************************
+  *
+@@ -426,6 +478,44 @@ ROM_START( mario )
+ 	ROM_LOAD( "tma1-c-5p.5p", 0x0000, 0x0020, CRC(58d86098) SHA1(d654995004b9052b12d3b682a2b39530e70030fc) ) /* BPROM was a TBP18S030N read as 82S123, main cpu memory map decoding prom */
+ ROM_END
+ 
++ROM_START( mariohs )
++	ROM_REGION( 0x10000, "maincpu", 0 )
++	ROM_LOAD( "tma1-c-7f_g.7f",     0x0000, 0x2000, CRC(c0c6e014) SHA1(36a04f9ca1c2a583477cb8a6f2ef94e044e08296) ) /* Unknown revision */
++	ROM_LOAD( "tma1-c-7e_g.7e",     0x2000, 0x2000, CRC(116b3856) SHA1(e372f846d0e5a2b9b47ebd0330293fcc8a12363f) )
++	ROM_LOAD( "tma1-c-7d_g.7d",     0x4000, 0x2000, CRC(dcceb6c1) SHA1(b19804e69ce2c98cf276c6055c3a250316b96b45) )
++	ROM_LOAD( "tma1-c-7c_g.7c",     0xf000, 0x1000, CRC(4a63d96b) SHA1(b09060b2c84ab77cc540a27b8f932cb60ec8d442) )
++
++	ROM_REGION( 0x10000, "braze", 0 )
++	ROM_LOAD( "mario_13.bin",       0x0000, 0x8000, CRC(64540502) SHA1(6732d0b64e5978a47496c5f1363d43a2c13ac1aa) ) /* Version 1.3 */
++	ROM_RELOAD( 0x8000, 0x8000 )
++
++	ROM_REGION( 0x1800, "audiocpu", 0 ) /* sound */
++	/* internal rom */
++	ROM_FILL(                 0x0000, 0x0800, 0x00)
++	/* first half banked */
++	ROM_LOAD( "tma1-c-6k_e.6k",   0x1000, 0x0800, CRC(06b9ff85) SHA1(111a29bcb9cda0d935675fa26eca6b099a88427f) )
++	/* second half always read */
++	ROM_CONTINUE(             0x0800, 0x0800)
++
++	ROM_REGION( 0x2000, "gfx1", 0 )
++	ROM_LOAD( "tma1-v-3f.3f",     0x0000, 0x1000, CRC(28b0c42c) SHA1(46749568aff88a28c3b6a1ac423abd1b90742a4d) )
++	ROM_LOAD( "tma1-v-3j.3j",     0x1000, 0x1000, CRC(0c8cc04d) SHA1(15fae47d701dc1ef15c943cee6aa991776ecffdf) )
++
++	ROM_REGION( 0x6000, "gfx2", 0 )
++	ROM_LOAD( "tma1-v-7m.7m",     0x0000, 0x1000, CRC(22b7372e) SHA1(4a1c1e239cb6d483e76f50d7a3b941025963c6a3) )
++	ROM_LOAD( "tma1-v-7n.7n",     0x1000, 0x1000, CRC(4f3a1f47) SHA1(0747d693b9482f6dd28b0bc484fd1d3e29d35654) )
++	ROM_LOAD( "tma1-v-7p.7p",     0x2000, 0x1000, CRC(56be6ccd) SHA1(15a6e16c189d45f72761ebcbe9db5001bdecd659) )
++	ROM_LOAD( "tma1-v-7s.7s",     0x3000, 0x1000, CRC(56f1d613) SHA1(9af6844dbaa3615433d0595e9e85e72493e31a54) )
++	ROM_LOAD( "tma1-v-7t.7t",     0x4000, 0x1000, CRC(641f0008) SHA1(589fe108c7c11278fd897f2ded8f0498bc149cfd) )
++	ROM_LOAD( "tma1-v-7u.7u",     0x5000, 0x1000, CRC(7baf5309) SHA1(d9194ff7b89a18273d37b47228fc7fb7e2a0ed1f) )
++
++	ROM_REGION( 0x0200, "proms", 0 )
++	ROM_LOAD( "tma1-c-4p.4p",     0x0000, 0x0200, CRC(afc9bd41) SHA1(90b739c4c7f24a88b6ac5ca29b06c032906a2801) )
++
++	ROM_REGION( 0x0020, "decoder_prom", 0 )
++	ROM_LOAD( "tma1-c-5p.5p", 0x0000, 0x0020, CRC(58d86098) SHA1(d654995004b9052b12d3b682a2b39530e70030fc) ) /* BPROM was a TBP18S030N read as 82S123, main cpu memory map decoding prom */
++ROM_END
++
+ ROM_START( mariof )
+ 	ROM_REGION( 0x10000, "maincpu", 0 )
+ 	ROM_LOAD( "tma1-c-7f_f.7f",  0x0000, 0x2000, CRC(c0c6e014) SHA1(36a04f9ca1c2a583477cb8a6f2ef94e044e08296) )
+@@ -561,8 +651,9 @@ ROM_END
+  *
+  *************************************/
+ 
+-GAME( 1983, mario,  0,     mario, mario,  mario_state, empty_init, ROT0, "Nintendo of America", "Mario Bros. (US, Revision G)",   MACHINE_SUPPORTS_SAVE )
+-GAME( 1983, mariof, mario, mario, mariof, mario_state, empty_init, ROT0, "Nintendo of America", "Mario Bros. (US, Revision F)",    MACHINE_SUPPORTS_SAVE )
+-GAME( 1983, marioe, mario, mario, marioe, mario_state, empty_init, ROT0, "Nintendo of America", "Mario Bros. (US, Revision E)",    MACHINE_SUPPORTS_SAVE )
+-GAME( 1983, marioj, mario, mario, marioj, mario_state, empty_init, ROT0, "Nintendo",            "Mario Bros. (Japan, Revision C)", MACHINE_SUPPORTS_SAVE )
+-GAME( 1983, masao,  mario, masao, mario,  mario_state, empty_init, ROT0, "bootleg",             "Masao",                           MACHINE_SUPPORTS_SAVE )
++GAME( 1983, mario,   0,     mario,       mario,  mario_state, empty_init,   ROT0, "Nintendo of America",       "Mario Bros. (US, Revision G)",           MACHINE_SUPPORTS_SAVE )
++GAME( 1983, mariof,  mario, mario,       mariof, mario_state, empty_init,   ROT0, "Nintendo of America",       "Mario Bros. (US, Revision F)",           MACHINE_SUPPORTS_SAVE )
++GAME( 1983, marioe,  mario, mario,       marioe, mario_state, empty_init,   ROT0, "Nintendo of America",       "Mario Bros. (US, Revision E)",           MACHINE_SUPPORTS_SAVE )
++GAME( 1983, marioj,  mario, mario,       marioj, mario_state, empty_init,   ROT0, "Nintendo",                  "Mario Bros. (Japan, Revision C)",        MACHINE_SUPPORTS_SAVE )
++GAME( 1983, masao,   mario, masao,       mario,  mario_state, empty_init,   ROT0, "bootleg",                   "Masao",                                  MACHINE_SUPPORTS_SAVE )
++GAME( 2001, mariohs, mario, mario_braze, mario,  mario_state, init_mariohs, ROT0, "hack (Braze Technologies)", "Mario Bros. High Score Kit (hack,V1.3)", MACHINE_SUPPORTS_SAVE )
+--- a/src/mame/nintendo/mario.h
++++ b/src/mame/nintendo/mario.h
+@@ -9,6 +9,7 @@
+ #include "machine/z80dma.h"
+ #include "emupal.h"
+ #include "tilemap.h"
++#include "machine/eepromser.h"
+ 
+ #define OLD_SOUND   (0)
+ 
+@@ -53,6 +54,7 @@ public:
+ 		driver_device(mconfig, type, tag),
+ 		m_maincpu(*this, "maincpu"),
+ 		m_audiocpu(*this, "audiocpu"),
++		m_eeprom(*this, "eeprom"),
+ 		m_gfxdecode(*this, "gfxdecode"),
+ 		m_palette(*this, "palette"),
+ 		m_z80dma(*this, "z80dma"),
+@@ -74,15 +76,19 @@ public:
+ 	{ }
+ 
+ 	void mario_base(machine_config &config);
++	void mario_braze(machine_config &config);
+ 	void masao(machine_config &config);
+ 	void masao_audio(machine_config &config);
+ 	void mario(machine_config &config);
+ 	void mario_audio(machine_config &config);
+ 
++	void init_mariohs();
++
+ private:
+ 	/* devices */
+ 	required_device<cpu_device> m_maincpu;
+ 	required_device<cpu_device> m_audiocpu;
++	optional_device<eeprom_serial_93cxx_device> m_eeprom;
+ 	required_device<gfxdecode_device> m_gfxdecode;
+ 	required_device<palette_device> m_palette;
+ 	required_device<z80dma_device> m_z80dma;
+@@ -108,6 +114,8 @@ private:
+ 	uint8_t   m_portT = 0;
+ 	const char *m_eabank = nullptr;
+ 
++	std::unique_ptr<uint8_t[]> m_decrypted;
++
+ 	/* video state */
+ 	uint8_t   m_gfx_bank = 0;
+ 	uint8_t   m_palette_bank = 0;
+@@ -155,6 +163,9 @@ private:
+ 	void mario_sound_map(address_map &map);
+ 	void masao_map(address_map &map);
+ 	void masao_sound_map(address_map &map);
++	uint8_t braze_eeprom_r();
++	void braze_eeprom_w(uint8_t data);
++	void braze_decrypt_rom(uint8_t *dest);
+ };
+ 
+ #endif // MAME_NINTENDO_MARIO_H
