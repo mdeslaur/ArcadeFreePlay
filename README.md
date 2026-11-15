@@ -5,6 +5,7 @@ These directories contain Free Play patches for arcade game roms.
 They currently support:
 - 1943
 - Arkanoid
+- Arkanoid Bootleg
 - Arkanoid: Revenge of Doh
 - Atari Starship 1
 - Bank Panic
@@ -26,5 +27,8 @@ Change history:
 2025-12-23 - Added High Score saving to Bombjack patches  
 2026-10-11 - Added Atari Starship 1 rom adapter pcb  
 2026-10-21 - Added Mario Bros enhancement patch  
+2026-11-15 - Moved Arkanoid patches to the Arkanoid Bootleg directory.  
+2026-11-15 - Added Arkanoid patches that work with an original MCU  
+
 
 Marc Deslauriers  
