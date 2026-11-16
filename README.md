@@ -18,6 +18,7 @@ In addition, there are some enhancement paches for arcade game roms.
 
 They currently support:
 - Mario Bros
+- MS Pac Twin
 
 Change history:  
 2024-07-12 - Initial version  
@@ -29,6 +30,7 @@ Change history:
 2026-10-21 - Added Mario Bros enhancement patch  
 2026-11-15 - Moved Arkanoid patches to the Arkanoid Bootleg directory.  
 2026-11-15 - Added Arkanoid patches that work with an original MCU  
+2026-11-16 - Added Ms Pac Twin decryptor  
 
 
 Marc Deslauriers  

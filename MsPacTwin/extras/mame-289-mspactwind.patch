@@ -1,0 +1,132 @@
+Description: adds support for a decrypted MsPacTwin romset
+Author: Marc Deslauriers <marcdeslauriers@videotron.ca>
+
+--- a/src/mame/mame.lst
++++ b/src/mame/mame.lst
+@@ -36642,6 +36642,7 @@ mspacpls
+ mspackpls
+ mspactwin
+ mspactwina
++mspactwind
+ newpuc2
+ newpuc2b
+ newpuckx
+--- a/src/mame/pacman/pacman.cpp
++++ b/src/mame/pacman/pacman.cpp
+@@ -1201,6 +1201,13 @@ void mspactwin_state::mspactwin_decrypte
+ 	map(0x8000, 0xbfff).rom().share("decrypted_opcodes_high");
+ }
+ 
++void mspactwin_state::mspactwind_decrypted_map(address_map &map)
++{
++	map(0x0000, 0x3fff).mirror(0x4000).rom().share("decrypted_opcodes");
++	map(0x4000, 0x5fff).unmapr(); // mirror only 6000-7fff
++	map(0x8000, 0xbfff).rom().share("decrypted_opcodes_high");
++}
++
+ 
+ void pacman_state::numcrash_map(address_map &map)
+ {
+@@ -3861,6 +3868,19 @@ void mspactwin_state::mspactwin(machine_
+ 	GENERIC_LATCH_8(config, m_sublatch);
+ }
+ 
++void mspactwin_state::mspactwind(machine_config &config)
++{
++	mspacman(config);
++
++	// Basic machine hardware
++	m_maincpu->set_addrmap(AS_PROGRAM, &mspactwin_state::mspactwin_map);
++	m_maincpu->set_addrmap(AS_OPCODES, &mspactwin_state::mspactwind_decrypted_map);
++
++	m_mainlatch->q_out_cb<3>().set(FUNC(mspactwin_state::flipscreen_w));
++
++	GENERIC_LATCH_8(config, m_sublatch);
++}
++
+ 
+ void pacman_state::numcrash(machine_config &config)
+ {
+@@ -5400,6 +5420,27 @@ ROM_START( mspactwina )
+ 	ROM_LOAD( "82s129.3k",  0x0100, 0x0100, CRC(77245b66) SHA1(0c4d0bee858b97632411c440bea6948a74759746) )
+ ROM_END
+ 
++/* Decrypted set */
++ROM_START( mspactwind )
++	ROM_REGION( 0x10000, "maincpu", 0 )  // 64k for decrypted code
++	ROM_LOAD( "m27256dec.bin",  0x0000, 0x4000, CRC(89f442a6) SHA1(5fa767e1e793046d52d97ce0028d9470a00236c9) )
++	ROM_CONTINUE(               0x8000, 0x4000 )
++
++	ROM_REGION( 0x2000, "gfx1", 0 )
++	ROM_LOAD( "4__2716.5d",  0x0000, 0x0800, CRC(483c1d1c) SHA1(d3b967c6a71cf02b825d800f56d5268f2e0e60eb) )
++	ROM_LOAD( "2__2716.5g",  0x0800, 0x0800, CRC(c08d73a2) SHA1(072e57641ac5ae3c47b4f8d9c55e3da5b35489ea) )
++	ROM_LOAD( "3__2516.5f",  0x1000, 0x0800, CRC(22b0188a) SHA1(a9ed9ca8b36a60081fd364abc9bc23963932cc0b) )
++	ROM_LOAD( "1__2516.5j",  0x1800, 0x0800, CRC(0a8c46a0) SHA1(e38e9e3258ab26fcbc6fdf258844e364f4b165ab) )
++
++	ROM_REGION( 0x0120, "proms", 0 )
++	ROM_LOAD( "mb7051.8h",  0x0000, 0x0020, CRC(ff344446) SHA1(45eb37533da8912645a089b014f3b3384702114a) )
++	ROM_LOAD( "82s129.4a",  0x0020, 0x0100, CRC(a8202d0d) SHA1(2a615211c33f3ef75af14e4bbedd2a700100be29) )
++
++	ROM_REGION( 0x0200, "namco", 0 )    // Sound PROMs
++	ROM_LOAD( "mb7052.1k",  0x0000, 0x0100, CRC(a9cc86bf) SHA1(bbcec0570aeceb582ff8238a4bc8546a23430081) )
++	ROM_LOAD( "82s129.3k",  0x0100, 0x0100, CRC(77245b66) SHA1(0c4d0bee858b97632411c440bea6948a74759746) )
++ROM_END
++
+ 
+ ROM_START( hangly )
+ 	ROM_REGION( 0x10000, "maincpu", 0 )
+@@ -8947,6 +8988,26 @@ void mspactwin_state::init_mspactwin()
+ 	}
+ }
+ 
++void mspactwin_state::init_mspactwind()
++{
++	uint8_t *rom = memregion("maincpu")->base();
++
++	for (int A = 0x0000; A < 0x4000; A+=2)
++	{
++		// decode opcode
++		m_decrypted_opcodes     [A  ] = rom[       A  ];
++		m_decrypted_opcodes     [A+1] = rom[       A+1];
++		m_decrypted_opcodes_high[A  ] = rom[0x8000+A  ];
++		m_decrypted_opcodes_high[A+1] = rom[0x8000+A+1];
++
++		// decode operand
++		//rom[       A  ] = bitswap<8>(rom[       A  ]       , 0, 1, 2, 3, 4, 5, 6, 7);
++		//rom[       A+1] = bitswap<8>(rom[       A+1] ^ 0xA3, 2, 4, 6, 3, 7, 0, 5, 1);
++		//rom[0x8000+A  ] = bitswap<8>(rom[0x8000+A  ]       , 0, 1, 2, 3, 4, 5, 6, 7);
++		//rom[0x8000+A+1] = bitswap<8>(rom[0x8000+A+1] ^ 0xA3, 2, 4, 6, 3, 7, 0, 5, 1);
++	}
++}
++
+ void pacman_state::init_mspackpls()
+ {
+ 	uint8_t *rom = memregion("maincpu")->base();
+@@ -9097,6 +9158,7 @@ GAME( 198?, pacmansp,     puckman,  pacm
+ 
+ GAME( 1992, mspactwin,   0,         mspactwin, mspactwin, mspactwin_state, init_mspactwin, ROT90,  "hack (Susilu)",   "Ms Pac Man Twin (Argentina, set 1)", MACHINE_SUPPORTS_SAVE )
+ GAME( 1992, mspactwina,  mspactwin, mspactwin, mspactwin, mspactwin_state, init_mspactwin, ROT90,  "hack (Susilu)",   "Ms Pac Man Twin (Argentina, set 2)", MACHINE_SUPPORTS_SAVE )
++GAME( 1992, mspactwind,  0,         mspactwind, mspactwin, mspactwin_state, init_mspactwind, ROT90, "hack (Susilu)",   "Ms Pac Man Twin (Argentina, Decrypted)", MACHINE_SUPPORTS_SAVE )
+ 
+ GAME( 1989, clubpacm,    0,         clubpacm,  clubpacm,  clubpacm_state,  empty_init,     ROT90,  "hack (Miky SRL)", "Pacman Club / Club Lambada (Argentina)", MACHINE_SUPPORTS_SAVE )
+ GAME( 1990, clubpacma,   clubpacm,  clubpacm,  clubpacma, clubpacm_state,  init_clubpacma, ROT90,  "hack (Miky SRL)", "Pacman Club (Argentina)",                MACHINE_SUPPORTS_SAVE )
+--- a/src/mame/pacman/pacman.h
++++ b/src/mame/pacman/pacman.h
+@@ -329,14 +329,17 @@ public:
+ 	{ }
+ 
+ 	void mspactwin(machine_config &config);
++	void mspactwind(machine_config &config);
+ 
+ 	void init_mspactwin();
++	void init_mspactwind();
+ 
+ 	void flipscreen_w(int state);
+ 
+ protected:
+ 	void mspactwin_map(address_map &map) ATTR_COLD;
+ 	void mspactwin_decrypted_map(address_map &map) ATTR_COLD;
++	void mspactwind_decrypted_map(address_map &map) ATTR_COLD;
+ 
+ 	void mspactwin_videoram_w(offs_t offset, uint8_t data);
+ 
